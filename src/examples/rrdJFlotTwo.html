@@ -28,6 +28,8 @@
     <script type="text/javascript" src="../lib/rrdMultiFile.js"></script>
 
     <!-- rrdFlot class needs the following four include files !-->
+	<!--[if lte IE 8]><script language="javascript" type="text/javascript" src="../../flot/excanvas.min.js"></script><![endif]-->
+
     <script type="text/javascript" src="../lib/rrdFlotSupport.js"></script>
     <script type="text/javascript" src="../lib/rrdFlot.js"></script>
     <script type="text/javascript" src="../../flot/jquery.js"></script>
@@ -60,10 +62,10 @@
       document.getElementById("infotable").deleteRow(0);
 
       // fname and rrd_data are the global variable used by all the functions below
-      fname1=document.getElementById("input_fname1").value;
-      rrd_data1=undefined;
-      fname2=document.getElementById("input_fname2").value;
-      rrd_data2=undefined;
+      var fname1=document.getElementById("input_fname1").value;
+      var rrd_data1=undefined;
+      var fname2=document.getElementById("input_fname2").value;
+      var rrd_data2=undefined;
 
       // This function updates the Web Page with the data from the RRD archive header
       // when a new file is selected
