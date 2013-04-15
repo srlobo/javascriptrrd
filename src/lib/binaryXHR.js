@@ -199,6 +199,24 @@ function FetchBinaryURL(url) {
 }
 
 
+
+// Aux function - necesary for IE
+function getXMLHttpRequest() 
+{
+	if (window.XMLHttpRequest) {
+		return new window.XMLHttpRequest;
+	}
+	else {
+		try {
+			return new ActiveXObject("MSXML2.XMLHTTP.3.0");
+		}
+		catch(ex) {
+			return null;
+		}
+	}
+}
+
+
 // ===============================================================
 // Asyncronously load a binary file from the specified URL 
 //
@@ -206,29 +224,29 @@ function FetchBinaryURL(url) {
 //  - bf = an object of type BinaryFile
 //  - optional argument object (used only if callback_arg not undefined) 
 function FetchBinaryURLAsync(url, callback, callback_arg) {
-  var callback_wrapper = function() {
-    if(this.readyState == 4) {
-      var response=this.responseBody;
-      if (response==undefined){ // responseBody is non standard, but the only way to make it work in IE
-	response=this.responseText;
-      }
-      var bf=new BinaryFile(response);
-      if (callback_arg!=null) {
-	callback(bf,callback_arg);
-      } else {
-	callback(bf);
-      }
-    }
-  }
+	var callback_wrapper = function() {
+		if(request.readyState == 4) {
+			var response = request.responseBody;
+			if (response == undefined){ // responseBody is non standard, but the only way to make it work in IE
+				response = request.responseText;
+			}
+			var bf=new BinaryFile(response);
+			if (callback_arg != null) {
+				callback(bf,callback_arg);
+			} else {
+				callback(bf);
+			}
+		}
+	};
 
-  var request =  new XMLHttpRequest();
-  request.onreadystatechange = callback_wrapper;
-  request.open("GET", url,true);
-  try {
-    request.overrideMimeType('text/plain; charset=x-user-defined');
-  } catch (err) {
-    // ignore any error, just to make both FF and IE work
-  }
-  request.send(null);
-  return request
+	var request = getXMLHttpRequest();
+	request.onreadystatechange = callback_wrapper;
+	request.open("GET", url,true);
+	try {
+		request.overrideMimeType('text/plain; charset=x-user-defined');
+	} catch (err) {
+		// ignore any error, just to make both FF and IE work
+	}
+	request.send(null);
+	return request
 }
