@@ -171,7 +171,8 @@ rrdFlot.prototype.createHTML = function() {
   cellDScb.vAlign="top";
   var formDScb=document.createElement("Form");
   formDScb.id=this.ds_cb_id;
-  formDScb.onchange= function () {rf_this.callback_ds_cb_changed();};
+  //formDScb.onchange= function () {rf_this.callback_ds_cb_changed();};
+  $(formDScb).change(function() { rf_this.callback_ds_cb_changed(); });
   cellDScb.appendChild(formDScb);
 
   // Scale row: scaled down selection graph
@@ -184,11 +185,11 @@ rrdFlot.prototype.createHTML = function() {
 
   var forScaleLegend=document.createElement("Select");
   forScaleLegend.id=this.legend_sel_id;
-  forScaleLegend.appendChild(new Option("Top","nw",this.rrdflot_defaults.legend=="Top",this.rrdflot_defaults.legend=="Top"));
-  forScaleLegend.appendChild(new Option("Bottom","sw",this.rrdflot_defaults.legend=="Bottom",this.rrdflot_defaults.legend=="Bottom"));
-  forScaleLegend.appendChild(new Option("TopRight","ne",this.rrdflot_defaults.legend=="TopRight",this.rrdflot_defaults.legend=="TopRight"));
-  forScaleLegend.appendChild(new Option("BottomRight","se",this.rrdflot_defaults.legend=="BottomRight",this.rrdflot_defaults.legend=="BottomRight"));
-  forScaleLegend.appendChild(new Option("None","None",this.rrdflot_defaults.legend=="None",this.rrdflot_defaults.legend=="None"));
+  forScaleLegend.options[forScaleLegend.options.length] = new Option("Top","nw",this.rrdflot_defaults.legend=="Top",this.rrdflot_defaults.legend=="Top");
+  forScaleLegend.options[forScaleLegend.options.length] = new Option("Bottom","sw",this.rrdflot_defaults.legend=="Bottom",this.rrdflot_defaults.legend=="Bottom");
+  forScaleLegend.options[forScaleLegend.options.length] = new Option("TopRight","ne",this.rrdflot_defaults.legend=="TopRight",this.rrdflot_defaults.legend=="TopRight");
+  forScaleLegend.options[forScaleLegend.options.length] = new Option("BottomRight","se",this.rrdflot_defaults.legend=="BottomRight",this.rrdflot_defaults.legend=="BottomRight");
+  forScaleLegend.options[forScaleLegend.options.length] = new Option("None","None",this.rrdflot_defaults.legend=="None",this.rrdflot_defaults.legend=="None");
   forScaleLegend.onchange= function () {rf_this.callback_legend_changed();};
   cellScaleLegend.appendChild(forScaleLegend);
 
@@ -218,7 +219,7 @@ rrdFlot.prototype.createHTML = function() {
     true_tz=-Math.ceil(d.getTimezoneOffset()/60);
   }
   for(var j=0; j<24; j++) {
-    timezone.appendChild(new Option(timezones[j],timezones[j],true_tz==Math.ceil(timezones[j]),true_tz==Math.ceil(timezones[j])));
+    timezone.options[timezone.options.length] = new Option(timezones[j],timezones[j],true_tz==Math.ceil(timezones[j]),true_tz==Math.ceil(timezones[j]));
   }
   timezone.onchange= function () {rf_this.callback_timezone_changed();};
 
@@ -266,23 +267,23 @@ rrdFlot.prototype.cleanHTMLCruft = function() {
 // ======================================
 // Populate RRA and RD info
 rrdFlot.prototype.populateRes = function() {
-  var form_el=document.getElementById(this.res_id);
+	var form_el=document.getElementById(this.res_id);
 
-  // First clean up anything in the element
-  while (form_el.lastChild!=null) form_el.removeChild(form_el.lastChild);
+	// First clean up anything in the element
+	while (form_el.lastChild!=null) form_el.removeChild(form_el.lastChild);
 
-  // now populate with RRA info
-  var nrRRAs=this.rrd_file.getNrRRAs();
-  for (var i=0; i<nrRRAs; i++) {
+	// now populate with RRA info
+	var nrRRAs=this.rrd_file.getNrRRAs();
+	for (var i=0; i<nrRRAs; i++) {
 
-    var rra=this.rrd_file.getRRAInfo(i);
-    var step=rra.getStep();
-    var rows=rra.getNrRows();
-    var period=step*rows;
-    var rra_label=rfs_format_time(step)+" ("+rfs_format_time(period)+" total)";
-    form_el.appendChild(new Option(rra_label,i));
-  }
-    if(this.rrdflot_defaults.use_rra) {form_el.selectedIndex = this.rrdflot_defaults.rra;}
+		var rra=this.rrd_file.getRRAInfo(i);
+		var step=rra.getStep();
+		var rows=rra.getNrRows();
+		var period=step*rows;
+		var rra_label=rfs_format_time(step)+" ("+rfs_format_time(period)+" total)";
+		form_el.options[form_el.options.length] = new Option(rra_label,i);
+	}
+	if(this.rrdflot_defaults.use_rra) {form_el.selectedIndex = this.rrdflot_defaults.rra;}
 };
 
 rrdFlot.prototype.populateDScb = function() {
@@ -377,93 +378,87 @@ rrdFlot.prototype.populateDScb = function() {
 // ======================================
 // 
 rrdFlot.prototype.drawFlotGraph = function() {
-  // Res contains the RRA idx
-  var oSelect=document.getElementById(this.res_id);
-  var rra_idx=Number(oSelect.options[oSelect.selectedIndex].value);
-  selected_rra=rra_idx;
-  if(this.rrdflot_defaults.use_rra) {
-    oSelect.options[oSelect.selectedIndex].value = this.rrdflot_defaults.rra;
-    rra_idx = this.rrdflot_defaults.rra;
-  }
-
-  // now get the list of selected DSs
-  var ds_positive_stack_list=[];
-  var ds_negative_stack_list=[];
-  var ds_single_list=[];
-  var ds_colors={};
-  var oCB=document.getElementById(this.ds_cb_id);
-  var nrDSs=oCB.ds.length;
-  local_checked_DSs=[];
-  if (oCB.ds.length>0) {
-    for (var i=0; i<oCB.ds.length; i++) {
-      if (oCB.ds[i].checked==true) {
-	var ds_name=oCB.ds[i].value;
-	var ds_stack_type='none';
-        local_checked_DSs.push(ds_name);;
-	if (this.ds_graph_options[ds_name]!=null) {
-	  var dgo=this.ds_graph_options[ds_name];
-	  if (dgo['stack']!=null) {
-	    var ds_stack_type=dgo['stack'];
-	  }
+	// Res contains the RRA idx
+	var oSelect=document.getElementById(this.res_id);
+	var rra_idx=Number(oSelect.options[oSelect.selectedIndex].value);
+	selected_rra=rra_idx;
+	if(this.rrdflot_defaults.use_rra) {
+		oSelect.options[oSelect.selectedIndex].value = this.rrdflot_defaults.rra;
+		rra_idx = this.rrdflot_defaults.rra;
 	}
-	if (ds_stack_type=='positive') {
-	  ds_positive_stack_list.push(ds_name);
-	} else if (ds_stack_type=='negative') {
-	  ds_negative_stack_list.push(ds_name);
-	} else {
-	  ds_single_list.push(ds_name);
+
+	// now get the list of selected DSs
+	var ds_positive_stack_list=[];
+	var ds_negative_stack_list=[];
+	var ds_single_list=[];
+	var ds_colors={};
+	var oCB = $("#" + this.ds_cb_id + " input:checkbox");
+	var nrDSs = oCB.length;
+	local_checked_DSs=[];
+	if (nrDSs > 0) {
+		for (var i=0; i < nrDSs; i++) {
+			if ($(oCB)[i].checked==true) {
+				var ds_name = $(oCB)[i].value;
+				var ds_stack_type='none';
+				local_checked_DSs.push(ds_name);;
+				if (this.ds_graph_options[ds_name]!=null) {
+					var dgo=this.ds_graph_options[ds_name];
+					if (dgo['stack']!=null) {
+						var ds_stack_type=dgo['stack'];
+					}
+				}
+				if (ds_stack_type=='positive') {
+					ds_positive_stack_list.push(ds_name);
+				} else if (ds_stack_type=='negative') {
+					ds_negative_stack_list.push(ds_name);
+				} else {
+					ds_single_list.push(ds_name);
+				}
+				ds_colors[ds_name]=i;
+			}
+		}
+	} 
+
+	var timeSelect=document.getElementById(this.time_sel_id);
+	timezone_shift=timeSelect.options[timeSelect.selectedIndex].value;
+
+	// then extract RRA data about those DSs
+	var flot_obj=rrdRRAStackFlotObj(this.rrd_file,rra_idx,
+									ds_positive_stack_list,
+									ds_negative_stack_list,
+									ds_single_list,
+									timezone_shift*3600);
+
+	// fix the colors, based on the position in the RRD
+	for (var i=0; i<flot_obj.data.length; i++) {
+		var name=flot_obj.data[i].label; // at this point, label is the ds_name
+		var color=ds_colors[name]; // default color as defined above
+		if (this.ds_graph_options[name]!=null) {
+			var dgo=this.ds_graph_options[name];
+			if (dgo['color']!=null) {
+				color=dgo['color'];
+			}
+			if (dgo['label']!=null) {
+				// if the user provided the label, use it
+				flot_obj.data[i].label=dgo['label'];
+			} else  if (dgo['title']!=null) {
+				// use title as a second choice 
+				flot_obj.data[i].label=dgo['title'];
+			} // else use the ds name
+			if (dgo['lines']!=null) {
+				// if the user provided the label, use it
+				flot_obj.data[i].lines=dgo['lines'];
+			}
+			if (dgo['yaxis']!=null) {
+				// if the user provided the label, use it
+				flot_obj.data[i].yaxis=dgo['yaxis'];
+			}
+		}
+		flot_obj.data[i].color=color;
 	}
-	ds_colors[ds_name]=i;
-      }
-    }
-  } else { // single element is not treated as an array
-    if (oCB.ds.checked==true) {
-      // no sense trying to stack a single element
-      var ds_name=oCB.ds.value;
-      ds_single_list.push(ds_name);
-      ds_colors[ds_name]=0;
-      local_checked_DSs.push(ds_name);
-    }
-  }
 
-  var timeSelect=document.getElementById(this.time_sel_id);
-  timezone_shift=timeSelect.options[timeSelect.selectedIndex].value;
-
-  // then extract RRA data about those DSs
-  var flot_obj=rrdRRAStackFlotObj(this.rrd_file,rra_idx,
-				  ds_positive_stack_list,ds_negative_stack_list,ds_single_list,
-                                  timezone_shift*3600);
-
-  // fix the colors, based on the position in the RRD
-  for (var i=0; i<flot_obj.data.length; i++) {
-    var name=flot_obj.data[i].label; // at this point, label is the ds_name
-    var color=ds_colors[name]; // default color as defined above
-    if (this.ds_graph_options[name]!=null) {
-      var dgo=this.ds_graph_options[name];
-      if (dgo['color']!=null) {
-	color=dgo['color'];
-      }
-      if (dgo['label']!=null) {
-	// if the user provided the label, use it
-	flot_obj.data[i].label=dgo['label'];
-      } else  if (dgo['title']!=null) {
-	// use title as a second choice 
-	flot_obj.data[i].label=dgo['title'];
-      } // else use the ds name
-      if (dgo['lines']!=null) {
-	// if the user provided the label, use it
-	flot_obj.data[i].lines=dgo['lines'];
-      }
-      if (dgo['yaxis']!=null) {
-	// if the user provided the label, use it
-	flot_obj.data[i].yaxis=dgo['yaxis'];
-      }
-    }
-    flot_obj.data[i].color=color;
-  }
-
-  // finally do the real plotting
-  this.bindFlotGraph(flot_obj);
+	// finally do the real plotting
+	this.bindFlotGraph(flot_obj);
 };
 
 // ======================================
@@ -485,7 +480,7 @@ rrdFlot.prototype.bindFlotGraph = function(flot_obj) {
     selection: { mode: "x" },
     tooltip: true,
     tooltipOpts: { content: "<h4>%s</h4> Value: %y.3" },
-    grid: { hoverable: true },
+    grid: { hoverable: true }
   };
   
   if (legend_id=="None") {
@@ -526,7 +521,7 @@ rrdFlot.prototype.bindFlotGraph = function(flot_obj) {
     lines: {show:true},
     xaxis: {mode: "time", min:flot_obj.min, max:flot_obj.max },
     yaxis: graph_options.yaxis,
-    selection: { mode: "x" },
+    selection: { mode: "x" }
   };
 
   //this.selection_range.selection_min=flot_obj.min;
