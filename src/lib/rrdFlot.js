@@ -605,12 +605,13 @@ rrdFlot.prototype.callback_timezone_changed = function() {
 
 rrdFlot.prototype.callback_elem_group_changed = function(num) { //,window_min,window_max) {
 
-  var oCB=document.getElementById(this.ds_cb_id);
-  var nrDSs=oCB.ds.length;
-  if (oCB.ds.length>0) {
-    for (var i=0; i<oCB.ds.length; i++) {
-      if(Math.floor(i/this.rrdflot_defaults.num_cb_rows)==num-1) {oCB.ds[i].checked=true; }
-      else {oCB.ds[i].checked=false;}
+  var oCB = $("#" + this.ds_cb_id + " input:checkbox");
+  var nrDSs = oCB.length;
+  if (nrDSs > 0) {
+    for (var i=0; i < nrDSs; i++) {
+      if(Math.floor(i/this.rrdflot_defaults.num_cb_rows)==num-1) {
+		  oCB[i].checked = true;
+	  } else { oCB[i].checked = false; }
     }
   }
   this.drawFlotGraph()
