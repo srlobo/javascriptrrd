@@ -81,8 +81,8 @@
       document.getElementById("infotable").deleteRow(0);
 
       // fname and rrd_data are the global variable used by all the functions below
-      fname=document.getElementById("input_fname").value;
-      rrd_data=undefined;
+      var fname = $("#input_fname").val();
+      var rrd_data = undefined;
 
       // This function updates the Web Page with the data from the RRD archive header
       // when a new file is selected
