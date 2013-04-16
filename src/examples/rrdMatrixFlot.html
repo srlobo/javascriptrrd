@@ -55,16 +55,12 @@
     <script type="text/javascript">
 
       // Remove the Javascript warning
-      document.getElementById("infotable").deleteRow(0);
-
-      {
-        var form_el=document.getElementById('input_fname');
-        form_el.appendChild(new Option("example4","example4"));
-       }
+	$("#infotable tr:first").remove();
+	$('#input_fname').html('<option value="example4">example4</option>');
     
-      // fname_group and rrd_data are the global variable used by all the functions below
-      fname_group=null;
-      rrd_data=[];
+	// fname_group and rrd_data are the global variable used by all the functions below
+	var fname_group = null;
+	var rrd_data = [];
 
       // This function updates the Web Page with the data from the RRD archive header
       // when a new file is selected

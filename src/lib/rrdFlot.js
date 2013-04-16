@@ -145,7 +145,7 @@ rrdFlot.prototype.createHTML = function() {
   var forRes=document.createElement("Select");
   forRes.id=this.res_id;
   //forRes.onChange= this.callback_res_changed;
-  forRes.onchange= function () {rf_this.callback_res_changed();};
+  $(forRes).change(function () {rf_this.callback_res_changed();});
   cellRes.appendChild(forRes);
   
   var cellDSTitle=rowHeader.insertCell(-1);

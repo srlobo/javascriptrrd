@@ -145,14 +145,14 @@ rrdFlotMatrix.prototype.createHTML = function() {
   var elGraph=document.createElement("Div");
   elGraph.style.width="500px";
   elGraph.style.height="300px";
-  elGraph.id=this.graph_id;
+  elGraph.id = this.graph_id;
   cellGraph.appendChild(elGraph);
 
   var cellRRDcb=rowGraph.insertCell(-1);
   cellRRDcb.vAlign="top";
   var formRRDcb=document.createElement("Form");
   formRRDcb.id=this.rrd_cb_id;
-  formRRDcb.onchange= function () {rf_this.callback_rrd_cb_changed();};
+  $(formRRDcb).change(function () {rf_this.callback_rrd_cb_changed();});
   cellRRDcb.appendChild(formRRDcb);
 
   // Scale row: scaled down selection graph
@@ -164,11 +164,11 @@ rrdFlotMatrix.prototype.createHTML = function() {
   cellScaleLegend.appendChild(document.createElement('br'));
   var forScaleLegend=document.createElement("Select");
   forScaleLegend.id=this.legend_sel_id;
-  forScaleLegend.appendChild(new Option("Top","nw",this.rrdflot_defaults.legend=="Top",this.rrdflot_defaults.legend=="Top"));
-  forScaleLegend.appendChild(new Option("Bottom","sw",this.rrdflot_defaults.legend=="Bottom",this.rrdflot_defaults.legend=="Bottom"));
-  forScaleLegend.appendChild(new Option("TopRight","ne",this.rrdflot_defaults.legend=="TopRight",this.rrdflot_defaults.legend=="TopRight"));
-  forScaleLegend.appendChild(new Option("BottomRight","se",this.rrdflot_defaults.legend=="BottomRight",this.rrdflot_defaults.legend=="BottomRight"));
-  forScaleLegend.appendChild(new Option("None","None",this.rrdflot_defaults.legend=="None",this.rrdflot_defaults.legend=="None"));
+  forScaleLegend.options[forScaleLegend.options.length] = new Option("Top","nw",this.rrdflot_defaults.legend=="Top",this.rrdflot_defaults.legend=="Top");
+  forScaleLegend.options[forScaleLegend.options.length] = new Option("Bottom","sw",this.rrdflot_defaults.legend=="Bottom",this.rrdflot_defaults.legend=="Bottom");
+  forScaleLegend.options[forScaleLegend.options.length] = new Option("TopRight","ne",this.rrdflot_defaults.legend=="TopRight",this.rrdflot_defaults.legend=="TopRight");
+  forScaleLegend.options[forScaleLegend.options.length] = new Option("BottomRight","se",this.rrdflot_defaults.legend=="BottomRight",this.rrdflot_defaults.legend=="BottomRight");
+  forScaleLegend.options[forScaleLegend.options.length] = new Option("None","None",this.rrdflot_defaults.legend=="None",this.rrdflot_defaults.legend=="None");
   forScaleLegend.onchange= function () {rf_this.callback_legend_changed();};
   cellScaleLegend.appendChild(forScaleLegend);
 
@@ -204,7 +204,7 @@ rrdFlotMatrix.prototype.populateDS = function() {
 
   for (i in this.ds_list) {
     var ds=this.ds_list[i];
-    form_el.appendChild(new Option(ds[1],ds[0]));
+    form_el.options[form_el.options.length] = new Option(ds[1],ds[0]);
   }
 };
 
@@ -223,7 +223,7 @@ rrdFlotMatrix.prototype.populateRes = function() {
     var rows=rra.getNrRows();
     var period=step*rows;
     var rra_label=rfs_format_time(step)+" ("+rfs_format_time(period)+" total)";
-    form_el.appendChild(new Option(rra_label,i));
+    form_el.options[form_el.options.length] = new Option(rra_label,i);
   }
 };
 
@@ -280,91 +280,85 @@ rrdFlotMatrix.prototype.populateRRDcb = function() {
 // ======================================
 // 
 rrdFlotMatrix.prototype.drawFlotGraph = function() {
-  // DS
-  var oSelect=document.getElementById(this.ds_id);
-  var ds_id=oSelect.options[oSelect.selectedIndex].value;
+	// DS
+	var oSelect=document.getElementById(this.ds_id);
+	var ds_id=oSelect.options[oSelect.selectedIndex].value;
 
-  // Res contains the RRA idx
-  oSelect=document.getElementById(this.res_id);
-  var rra_idx=Number(oSelect.options[oSelect.selectedIndex].value);
+	// Res contains the RRA idx
+	oSelect=document.getElementById(this.res_id);
+	var rra_idx=Number(oSelect.options[oSelect.selectedIndex].value);
 
-  // Extract ds info ... to be finished
-  var ds_positive_stack=null;
+	// Extract ds info ... to be finished
+	var ds_positive_stack=null;
 
-  var std_colors=["#00ff00","#00ffff","#0000ff","#ff00ff",
-		  "#808080","#ff0000","#ffff00","#e66266",
-		  "#33cccc","#fff8a9","#ccffff","#a57e81",
-		  "#7bea81","#8d4dff","#ffcc99","#000000"];
+	var std_colors=["#00ff00","#00ffff","#0000ff","#ff00ff",
+		"#808080","#ff0000","#ffff00","#e66266",
+		"#33cccc","#fff8a9","#ccffff","#a57e81",
+		"#7bea81","#8d4dff","#ffcc99","#000000"];
 
-  // now get the list of selected RRDs
-  var rrd_list=[];
-  var rrd_colors=[];
-  var oCB=document.getElementById(this.rrd_cb_id);
-  var nrRRDs=oCB.rrd.length;
-  if (oCB.rrd.length>0) {
-    for (var i=0; i<oCB.rrd.length; i++) {
-      if (oCB.rrd[i].checked==true) {
-	//var rrd_idx=Number(oCB.rrd[i].value);
-	rrd_list.push(this.rrd_files[i]);
-	color=std_colors[i%std_colors.length];
-	if ((i/std_colors.length)>=1) {
-	  // wraparound, change them a little
-	  idiv=Math.floor(i/std_colors.length);
-	  c1=parseInt(color[1]+color[2],16);
-	  c2=parseInt(color[3]+color[4],16);
-	  c3=parseInt(color[5]+color[6],16);
-	  m1=Math.floor((c1-128)/Math.sqrt(idiv+1))+128;
-	  m2=Math.floor((c2-128)/Math.sqrt(idiv+1))+128;
-	  m3=Math.floor((c3-128)/Math.sqrt(idiv+1))+128;
-	  if (m1>15) s1=(m1).toString(16); else s1="0"+(m1).toString(16);
-	  if (m2>15) s2=(m2).toString(16); else s2="0"+(m2).toString(16);
-	  if (m3>15) s3=(m3).toString(16); else s3="0"+(m3).toString(16);
-	  color="#"+s1+s2+s3;
+	// now get the list of selected RRDs
+	var rrd_list=[];
+	var rrd_colors=[];
+	var oCB = $("#" + this.rrd_cb_id + " input:checkbox");
+	var nrRRDs = oCB.length;
+	if (nrRRDs > 0) {
+		for (var i=0; i < nrRRDs; i++) {
+			if (oCB[i].checked == true) {
+				//var rrd_idx=Number(oCB.rrd[i].value);
+				rrd_list.push(this.rrd_files[i]);
+				color=std_colors[i%std_colors.length];
+				if ((i/std_colors.length)>=1) {
+					// wraparound, change them a little
+					idiv=Math.floor(i/std_colors.length);
+					c1=parseInt(color[1]+color[2],16);
+					c2=parseInt(color[3]+color[4],16);
+					c3=parseInt(color[5]+color[6],16);
+					m1=Math.floor((c1-128)/Math.sqrt(idiv+1))+128;
+					m2=Math.floor((c2-128)/Math.sqrt(idiv+1))+128;
+					m3=Math.floor((c3-128)/Math.sqrt(idiv+1))+128;
+					if (m1>15) s1=(m1).toString(16); else s1="0"+(m1).toString(16);
+					if (m2>15) s2=(m2).toString(16); else s2="0"+(m2).toString(16);
+					if (m3>15) s3=(m3).toString(16); else s3="0"+(m3).toString(16);
+					color="#"+s1+s2+s3;
+				}
+				rrd_colors.push(color);
+			}
+		}
+	}  
+
+	// then extract RRA data about those DSs... to be finished
+	var flot_obj=rrdRRAMultiStackFlotObj(rrd_list,rra_idx,ds_id);
+
+	// fix the colors, based on the position in the RRD
+	for (var i=0; i<flot_obj.data.length; i++) {
+		var name=flot_obj.data[i].label; // at this point, label is the rrd_name
+		var color=rrd_colors[flot_obj.data.length-i-1]; // stack inverts colors
+		var lines=null;
+		if (this.rrd_graph_options[name]!=null) {
+			var dgo=this.rrd_graph_options[name];
+			if (dgo['color']!=null) {
+				color=dgo['color'];
+			}
+			if (dgo['label']!=null) {
+				// if the user provided the label, use it
+				flot_obj.data[i].label=dgo['label'];
+			} else  if (dgo['title']!=null) {
+				// use title as a second choice 
+				flot_obj.data[i].label=dgo['title'];
+			} // else use the rrd name
+			if (dgo['lines']!=null) {
+				// if the user provided the label, use it
+				flot_obj.data[i].lines=dgo['lines'];
+			}
+		}
+		if (lines==null) {
+			flot_obj.data[i].lines= { show:true, fill: true, fillColor:color };
+		}
+		flot_obj.data[i].color=color;
 	}
-        rrd_colors.push(color);
-      }
-    }
-  } else { // single element is not treated as an array
-    if (oCB.rrd.checked==true) {
-      // no sense trying to stack a single element
-      rrd_list.push(this.rrd_files[0]);
-      rrd_colors.push(std_colors[0]);
-    }
-  }
-  
-  // then extract RRA data about those DSs... to be finished
-  var flot_obj=rrdRRAMultiStackFlotObj(rrd_list,rra_idx,ds_id);
 
-  // fix the colors, based on the position in the RRD
-  for (var i=0; i<flot_obj.data.length; i++) {
-    var name=flot_obj.data[i].label; // at this point, label is the rrd_name
-    var color=rrd_colors[flot_obj.data.length-i-1]; // stack inverts colors
-    var lines=null;
-    if (this.rrd_graph_options[name]!=null) {
-      var dgo=this.rrd_graph_options[name];
-      if (dgo['color']!=null) {
-	color=dgo['color'];
-      }
-      if (dgo['label']!=null) {
-	// if the user provided the label, use it
-	flot_obj.data[i].label=dgo['label'];
-      } else  if (dgo['title']!=null) {
-	// use title as a second choice 
-	flot_obj.data[i].label=dgo['title'];
-      } // else use the rrd name
-      if (dgo['lines']!=null) {
-	// if the user provided the label, use it
-	flot_obj.data[i].lines=dgo['lines'];
-      }
-    }
-    if (lines==null) {
-	flot_obj.data[i].lines= { show:true, fill: true, fillColor:color };
-    }
-    flot_obj.data[i].color=color;
-  }
-
-  // finally do the real plotting
-  this.bindFlotGraph(flot_obj);
+	// finally do the real plotting
+	this.bindFlotGraph(flot_obj);
 };
 
 // ======================================
@@ -386,7 +380,7 @@ rrdFlotMatrix.prototype.bindFlotGraph = function(flot_obj) {
     selection: { mode: "x" },
     tooltip: true,
     tooltipOpts: { content: "<h4>%s</h4> Value: %y.3" },
-    grid: { hoverable: true },
+    grid: { hoverable: true }
   };
   
   if (this.graph_options!=null) {
@@ -445,7 +439,7 @@ rrdFlotMatrix.prototype.bindFlotGraph = function(flot_obj) {
     legend: {show:false},
     lines: {show:true},
     xaxis: { mode: "time", min:flot_obj.min, max:flot_obj.max },
-    selection: { mode: "x" },
+    selection: { mode: "x" }
   };
     
   var flot_data=flot_obj.data;
