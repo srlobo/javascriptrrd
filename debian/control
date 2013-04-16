@@ -1,0 +1,14 @@
+Source: rrd
+Section: web
+Priority: optional
+Maintainer: Félix Ortega <fortegah@bankia.com>
+Build-Depends: debhelper
+Standards-Version: 3.9.2
+Homepage: http://javascriptrrd.sourceforge.net/
+Vcs-Git: http://github.com/srlobo/javascriptrrd
+
+Package: libjs-rrd
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, libjs-jquery
+Description: A JS library for drawing graphics from a RRD file
+ A JS library for drawing graphics from a RRD file
